@@ -2,12 +2,13 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
+import java.util.Comparator;
 
 public class GamePane extends JPanel implements KeyListener, ActionListener, MouseListener {
     Timer timer;
     Graphics g;
     Player player;
-    ArrayList<Enemy> enemy= new ArrayList<Enemy>();
+    ArrayList<Enemy> enemy= new ArrayList<>();
 
     boolean kUP=false;
     boolean kLEFT=false;
@@ -17,13 +18,13 @@ public class GamePane extends JPanel implements KeyListener, ActionListener, Mou
 
 
 
-    public GamePane(JFrame g,Graphics gg){
+    public GamePane(Graphics gg){
         setBackground(Color.BLUE);
-        player= new Player(this);
+        player= new Player();
         setSize(1440,1080);
         setVisible(true);
         this.g = gg;
-        timer = new Timer(30,this);
+        timer = new Timer(25,this);
         timer.start();
     }
 
@@ -33,28 +34,23 @@ public class GamePane extends JPanel implements KeyListener, ActionListener, Mou
         int key = e.getKeyCode();
         // depending on which arrow key was pressed, we're going to move the player by
         // one whole tile for this input
-        if (key == KeyEvent.VK_UP) {
-            kUP=true;
-//            player.y-= player.speed;
-//            if(player.y < 0) player.y=0;
-        }
-        if (key == KeyEvent.VK_RIGHT) {
-            kRIGHT=true;
-//            player.x+=player.speed;
-//            if(player.x > 1870) player.x=1870;
-        }
-        if (key == KeyEvent.VK_DOWN) {
-            kDOWN=true;
-//            player.y+=player.speed;
-//            if(player.y > 1080) player.y=1030;
-        }
-        if (key == KeyEvent.VK_LEFT) {
-            kLEFT=true;
-//            player.x-=player.speed;
-//            if(player.x < 0) player.x=0;
-        }
-        enemy.forEach(Enemy::getcloser);
 
+        switch (key) {
+            case KeyEvent.VK_UP:
+                kUP = true;
+                break;
+
+            case KeyEvent.VK_RIGHT:
+                    kRIGHT = true;
+                    break;
+            case KeyEvent.VK_DOWN:
+                    kDOWN = true;
+                    break;
+
+            case KeyEvent.VK_LEFT:
+                    kLEFT = true;
+                    break;
+        }
     }
 
     public void paintComponent(Graphics g) {
@@ -87,8 +83,22 @@ public class GamePane extends JPanel implements KeyListener, ActionListener, Mou
             if(player.x < 0) player.x=0;
         }
 
+        enemy.forEach(enemy1 ->{
+            for (int i = 0; i < enemy.size(); i++){
+                if ( !(enemy.get(i).y == enemy1.y && enemy.get(i).x == enemy1.x) && enemy1.hitbox.intersects(enemy.get(i).hitbox)){
+                    if (enemy.indexOf(enemy1) < i) enemy.get(i).isTouching = true;
+                    else enemy1.isTouching = true;
+                }
+            }
+            if (!(enemy1.isTouching)) enemy1.getCloser();
+            else enemy1.getCLoserSlow();
+        });
 
-        enemy.forEach(Enemy::getcloser);
+        enemy.sort(Comparator.comparingInt(enemy -> enemy.distanceToPlayer));
+
+        enemy.forEach(enemy1 -> enemy1.isTouching = false);
+
+
         repaint();
     }
 
@@ -102,19 +112,21 @@ public class GamePane extends JPanel implements KeyListener, ActionListener, Mou
         int key = keyEvent.getKeyCode();
         // depending on which arrow key was pressed, we're going to move the player by
         // one whole tile for this input
-        if (key == KeyEvent.VK_UP) {
-            kUP=false;
-        }
-        if (key == KeyEvent.VK_RIGHT) {
-            kRIGHT=false;
+        switch (key) {
+            case KeyEvent.VK_UP:
+                kUP = false;
+                break;
 
-        }
-        if (key == KeyEvent.VK_DOWN) {
-            kDOWN=false;
+            case KeyEvent.VK_RIGHT:
+                kRIGHT = false;
+                break;
+            case KeyEvent.VK_DOWN:
+                kDOWN = false;
+                break;
 
-        }
-        if (key == KeyEvent.VK_LEFT) {
-            kLEFT=false;
+            case KeyEvent.VK_LEFT:
+                kLEFT = false;
+                break;
         }
     }
 
