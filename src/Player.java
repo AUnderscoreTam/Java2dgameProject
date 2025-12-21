@@ -9,7 +9,7 @@ public class Player{
     int xp;
     int speed = 10;
 
-    public Player(GamePane g){
+    public Player(){
         hp = 100;
         level =1;
         xp = 0;

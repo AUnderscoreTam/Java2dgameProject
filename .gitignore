@@ -30,3 +30,6 @@ bin/
 .DS_Store
 
 *.iml
+*.MF
+/META-INF/
+/resources.META-INF/
