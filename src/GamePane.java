@@ -1,14 +1,21 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Random;
 
 public class GamePane extends JPanel implements KeyListener, ActionListener, MouseListener {
     Timer timer;
-    Graphics g;
+
     Player player;
     ArrayList<Enemy> enemy= new ArrayList<>();
+    Instant start = Instant.now();
+    Instant now;
+    Random wooo = new Random();
+
 
     boolean kUP=false;
     boolean kLEFT=false;
@@ -16,14 +23,11 @@ public class GamePane extends JPanel implements KeyListener, ActionListener, Mou
     boolean kDOWN=false;
 
 
-
-
-    public GamePane(Graphics gg){
+    public GamePane() {
         setBackground(Color.BLUE);
         player= new Player();
         setSize(1440,1080);
         setVisible(true);
-        this.g = gg;
         timer = new Timer(25,this);
         timer.start();
     }
@@ -51,6 +55,29 @@ public class GamePane extends JPanel implements KeyListener, ActionListener, Mou
                     kLEFT = true;
                     break;
         }
+        now = Instant.now();
+        if (Duration.between(start, now).toSeconds() >= 1) {
+            switch (wooo.nextInt(1, 5)) {
+                case 1:
+                    Enemy enemy1 = new Enemy(0, wooo.nextInt(1080), player);
+                    enemy.add(enemy1);
+                    break;
+                case 2:
+                    Enemy enemy2 = new Enemy(wooo.nextInt(1920), 1080, player);
+                    enemy.add(enemy2);
+                    break;
+                case 3:
+                    Enemy enemy3 = new Enemy(1920, wooo.nextInt(1080), player);
+                    enemy.add(enemy3);
+                    break;
+                case 4:
+                    Enemy enemy4 = new Enemy(wooo.nextInt(1920), 0, player);
+                    enemy.add(enemy4);
+                    break;
+            }
+            start = Instant.now();
+        }
+
     }
 
     public void paintComponent(Graphics g) {
@@ -83,21 +110,25 @@ public class GamePane extends JPanel implements KeyListener, ActionListener, Mou
             if(player.x < 0) player.x=0;
         }
 
-        enemy.forEach(enemy1 ->{
-            for (int i = 0; i < enemy.size(); i++){
-                if ( !(enemy.get(i).y == enemy1.y && enemy.get(i).x == enemy1.x) && enemy1.hitbox.intersects(enemy.get(i).hitbox)){
-                    if (enemy.indexOf(enemy1) < i) enemy.get(i).isTouching = true;
-                    else enemy1.isTouching = true;
-                }
-            }
-            if (!(enemy1.isTouching)) enemy1.getCloser();
-            else enemy1.getCLoserSlow();
-        });
-
         enemy.sort(Comparator.comparingInt(enemy -> enemy.distanceToPlayer));
 
-        enemy.forEach(enemy1 -> enemy1.isTouching = false);
+        //yes i know this is O(n^3)
+        //i dont care
 
+        for (int j = 0; j < enemy.size(); j++) {
+            for (int i = 0; i < enemy.size(); i++) {
+                if (!(enemy.get(i) == enemy.get(j)) && enemy.get(j).hitbox.intersects(enemy.get(i).hitbox)) {
+                    if (enemy.indexOf(enemy.get(j)) < i) enemy.get(i).isTouching = true;
+                    else enemy.get(j).isTouching = true;
+                }
+            }
+            if (!(enemy.get(j).isTouching)) enemy.get(j).getCloser();
+            else enemy.get(j).getCLoserSlow();
+        }
+
+
+        enemy.forEach(enemy1 -> enemy1.isTouching = false);
+        now = Instant.now();
 
         repaint();
     }
@@ -132,8 +163,6 @@ public class GamePane extends JPanel implements KeyListener, ActionListener, Mou
 
     @Override
     public void mouseClicked(MouseEvent mouseEvent) {
-         Enemy enemy1 = new Enemy(mouseEvent.getX(), mouseEvent.getY(),player);
-        enemy.add(enemy1);
     }
 
     @Override
