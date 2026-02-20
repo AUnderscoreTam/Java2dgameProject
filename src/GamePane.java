@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Random;
 
+
 public class GamePane extends JPanel implements KeyListener, ActionListener, MouseListener {
     Timer timer;
 
@@ -14,7 +15,8 @@ public class GamePane extends JPanel implements KeyListener, ActionListener, Mou
     ArrayList<Enemy> enemy= new ArrayList<>();
     Instant start = Instant.now();
     Instant now;
-    Random wooo = new Random();
+    Random rand = new Random();
+    ArrayList<Projectile> projectile = new ArrayList<>();
 
 
     boolean kUP=false;
@@ -54,22 +56,23 @@ public class GamePane extends JPanel implements KeyListener, ActionListener, Mou
                     break;
         }
         now = Instant.now();
+
         if (Duration.between(start, now).toSeconds() >= 1) {
-            switch (wooo.nextInt(1, 5)) {
+            switch (rand.nextInt(1, 5)) {
                 case 1:
-                    Enemy enemy1 = new Enemy(20, wooo.nextInt(1060), player);
+                    Enemy enemy1 = new Enemy(20, rand.nextInt(1060), player);
                     enemy.add(enemy1);
                     break;
                 case 2:
-                    Enemy enemy2 = new Enemy(wooo.nextInt(1900), 1060, player);
+                    Enemy enemy2 = new Enemy(rand.nextInt(1900), 1060, player);
                     enemy.add(enemy2);
                     break;
                 case 3:
-                    Enemy enemy3 = new Enemy(1900, wooo.nextInt(1060), player);
+                    Enemy enemy3 = new Enemy(1900, rand.nextInt(1060), player);
                     enemy.add(enemy3);
                     break;
                 case 4:
-                    Enemy enemy4 = new Enemy(wooo.nextInt(1900), 20, player);
+                    Enemy enemy4 = new Enemy(rand.nextInt(1900), 20, player);
                     enemy.add(enemy4);
                     break;
             }
@@ -80,7 +83,11 @@ public class GamePane extends JPanel implements KeyListener, ActionListener, Mou
 
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
+        g.setColor(Color.BLACK);
         enemy.forEach(enemy1 -> enemy1.draw(g));
+        g.setColor(Color.RED);
+        projectile.forEach(orb1->orb1.draw(g));
+        g.setColor(Color.green);
         player.draw(g);
     }
 
@@ -110,6 +117,12 @@ public class GamePane extends JPanel implements KeyListener, ActionListener, Mou
 
         enemy.sort(Comparator.comparingInt(enemy -> enemy.distanceToPlayer));
 
+        if (!enemy.isEmpty() && player.hitbox.intersects(enemy.getFirst().hitbox)){
+            enemy.clear();
+            projectile.clear();
+            player.x = 500;
+            player.y = 500;
+        }
 
         for (int j = 0; j < enemy.size(); j++) {
             enemy.get(j).getCloser();
@@ -121,9 +134,28 @@ public class GamePane extends JPanel implements KeyListener, ActionListener, Mou
             }
         }
 
-        //enemy.forEach(enemy1 -> enemy1.isTouching = false);
-        now = Instant.now();
 
+        for(int i=0;i<projectile.size();i++) {
+
+            projectile.get(i).getCloser();
+            if (Duration.between(projectile.get(i).birth, now).toSeconds() > 2) {
+                projectile.remove(i);
+            }
+        }
+
+        if (!enemy.isEmpty() && !projectile.isEmpty()) {
+            for (int i = 0; i < enemy.size(); i++) {
+                for (int j = 0; j < projectile.size(); j++) {
+                    if (enemy.get(i).hitbox.intersects(projectile.get(j).hitbox)) {
+                        enemy.remove(i);
+                        projectile.remove(j);
+                        break;
+                    }
+                }
+            }
+        }
+
+        now = Instant.now();
         repaint();
     }
 
@@ -166,7 +198,8 @@ public class GamePane extends JPanel implements KeyListener, ActionListener, Mou
 
     @Override
     public void mouseReleased(MouseEvent mouseEvent) {
-
+        Instant birth= now;
+        projectile.add(player.shoot(new Point(mouseEvent.getX(),mouseEvent.getY()),birth));
     }
 
     @Override
