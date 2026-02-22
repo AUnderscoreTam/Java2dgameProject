@@ -1,3 +1,5 @@
+import gamelogic.GamePane;
+
 import javax.swing.*;
 import java.awt.*;
 
@@ -10,12 +12,12 @@ void main() {
 public void init() {
     JFrame gameWindow = new JFrame("JavaSurvivors");
     gameWindow.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-    gameWindow.setSize(1440, 1080);
+    gameWindow.setSize(Toolkit.getDefaultToolkit().getScreenSize());
+    gameWindow.setUndecorated(true);
     gameWindow.setVisible(true);
-
     GamePane gamePlane = new GamePane();
     gameWindow.setContentPane(gamePlane);
     gameWindow.addKeyListener(gamePlane);
-    gameWindow.addMouseListener(gamePlane);
+    gamePlane.addMouseListener(gamePlane);
 
 }

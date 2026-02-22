@@ -1,3 +1,10 @@
+package gamelogic;
+
+import Items.GreenSquare;
+import Items.Item;
+import Items.YellowTriangle;
+import Items.WhiteCircle;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -17,6 +24,8 @@ public class GamePane extends JPanel implements KeyListener, ActionListener, Mou
     Instant now;
     Random rand = new Random();
     ArrayList<Projectile> projectile = new ArrayList<>();
+    ArrayList<Item> items= new ArrayList<>();
+    int enemySpawnEscalation = 1;
 
 
     boolean kUP=false;
@@ -28,7 +37,7 @@ public class GamePane extends JPanel implements KeyListener, ActionListener, Mou
     public GamePane() {
         setBackground(Color.BLUE);
         player= new Player();
-        setSize(1440,1080);
+        setSize(Toolkit.getDefaultToolkit().getScreenSize());
         setVisible(true);
         timer = new Timer(25,this);
         timer.start();
@@ -40,45 +49,21 @@ public class GamePane extends JPanel implements KeyListener, ActionListener, Mou
         int key = e.getKeyCode();
 
         switch (key) {
-            case KeyEvent.VK_UP:
+            case KeyEvent.VK_W:
                 kUP = true;
                 break;
 
-            case KeyEvent.VK_RIGHT:
+            case KeyEvent.VK_D:
                     kRIGHT = true;
                     break;
-            case KeyEvent.VK_DOWN:
+            case KeyEvent.VK_S:
                     kDOWN = true;
                     break;
 
-            case KeyEvent.VK_LEFT:
+            case KeyEvent.VK_A:
                     kLEFT = true;
                     break;
         }
-        now = Instant.now();
-
-        if (Duration.between(start, now).toSeconds() >= 1) {
-            switch (rand.nextInt(1, 5)) {
-                case 1:
-                    Enemy enemy1 = new Enemy(20, rand.nextInt(1060), player);
-                    enemy.add(enemy1);
-                    break;
-                case 2:
-                    Enemy enemy2 = new Enemy(rand.nextInt(1900), 1060, player);
-                    enemy.add(enemy2);
-                    break;
-                case 3:
-                    Enemy enemy3 = new Enemy(1900, rand.nextInt(1060), player);
-                    enemy.add(enemy3);
-                    break;
-                case 4:
-                    Enemy enemy4 = new Enemy(rand.nextInt(1900), 20, player);
-                    enemy.add(enemy4);
-                    break;
-            }
-            start = Instant.now();
-        }
-
     }
 
     public void paintComponent(Graphics g) {
@@ -87,6 +72,11 @@ public class GamePane extends JPanel implements KeyListener, ActionListener, Mou
         enemy.forEach(enemy1 -> enemy1.draw(g));
         g.setColor(Color.RED);
         projectile.forEach(orb1->orb1.draw(g));
+
+        items.forEach(item1 -> {
+            item1.draw(g);
+        });
+
         g.setColor(Color.green);
         player.draw(g);
     }
@@ -95,6 +85,35 @@ public class GamePane extends JPanel implements KeyListener, ActionListener, Mou
 
     @Override
     public void actionPerformed(ActionEvent actionEvent) {
+        now = Instant.now();
+
+        if (Duration.between(start, now).toSeconds() >= 1) {
+            for (int i = 0; i < enemySpawnEscalation; i++) {
+                switch (rand.nextInt(1, 5)) {
+                    case 1:
+                        Enemy enemy1 = new Enemy(20, rand.nextInt(1060), player);
+                        enemy.add(enemy1);
+                        break;
+                    case 2:
+
+                        Enemy enemy2 = new Enemy(rand.nextInt(1900), 1060, player);
+                        enemy.add(enemy2);
+                        break;
+                    case 3:
+                        Enemy enemy3 = new Enemy(1900, rand.nextInt(1060), player);
+                        enemy.add(enemy3);
+                        break;
+                    case 4:
+                        Enemy enemy4 = new Enemy(rand.nextInt(1900), 20, player);
+                        enemy.add(enemy4);
+                        break;
+
+                }
+                start = Instant.now();
+            }
+            enemySpawnEscalation++;
+        }
+
         if(kUP) {
             player.y -= player.speed;
             if (player.y < 0) player.y = 0;
@@ -120,8 +139,16 @@ public class GamePane extends JPanel implements KeyListener, ActionListener, Mou
         if (!enemy.isEmpty() && player.hitbox.intersects(enemy.getFirst().hitbox)){
             enemy.clear();
             projectile.clear();
-            player.x = 500;
-            player.y = 500;
+            items.clear();
+            player.resetStats();
+            enemySpawnEscalation=1;
+        }
+
+        for (int i=0; i<items.size();i++){
+            if(player.hitbox.intersects(items.get(i).hitbox)){
+                items.get(i).increaseStat();
+                items.remove(i);
+            }
         }
 
         for (int j = 0; j < enemy.size(); j++) {
@@ -135,27 +162,48 @@ public class GamePane extends JPanel implements KeyListener, ActionListener, Mou
         }
 
 
-        for(int i=0;i<projectile.size();i++) {
 
-            projectile.get(i).getCloser();
-            if (Duration.between(projectile.get(i).birth, now).toSeconds() > 2) {
-                projectile.remove(i);
-            }
-        }
 
         if (!enemy.isEmpty() && !projectile.isEmpty()) {
             for (int i = 0; i < enemy.size(); i++) {
                 for (int j = 0; j < projectile.size(); j++) {
                     if (enemy.get(i).hitbox.intersects(projectile.get(j).hitbox)) {
+                        if (rand.nextInt(100)<=20){
+                            switch (rand.nextInt(4)){
+                                case 1:
+                                     items.add(new YellowTriangle(enemy.get(i).x,enemy.get(i).y,player));
+                                     break;
+                                case 2:
+                                    items.add(new GreenSquare(enemy.get(i).x,enemy.get(i).y,player));
+                                    break;
+                                case 3:
+                                    items.add(new WhiteCircle(enemy.get(i).x,enemy.get(i).y,player));
+                                    break;
+                            }
+                        }
                         enemy.remove(i);
+                        try {
+                        projectile.get(i).pierce--;
+                        }catch (IndexOutOfBoundsException e){
+                            break;
+                        }
+                        if (projectile.get(i).pierce<1){
                         projectile.remove(j);
+                        }
                         break;
                     }
+
                 }
             }
         }
 
-        now = Instant.now();
+        for(int i=0;i<projectile.size();i++) {
+            if (Duration.between(projectile.get(i).birth, now).toSeconds() > 2) {
+                projectile.remove(i);
+            }
+        }
+
+
         repaint();
     }
 
@@ -170,18 +218,18 @@ public class GamePane extends JPanel implements KeyListener, ActionListener, Mou
         // depending on which arrow key was pressed, we're going to move the player by
         // one whole tile for this input
         switch (key) {
-            case KeyEvent.VK_UP:
+            case KeyEvent.VK_W:
                 kUP = false;
                 break;
 
-            case KeyEvent.VK_RIGHT:
+            case KeyEvent.VK_D:
                 kRIGHT = false;
                 break;
-            case KeyEvent.VK_DOWN:
+            case KeyEvent.VK_S:
                 kDOWN = false;
                 break;
 
-            case KeyEvent.VK_LEFT:
+            case KeyEvent.VK_A:
                 kLEFT = false;
                 break;
         }
@@ -189,17 +237,17 @@ public class GamePane extends JPanel implements KeyListener, ActionListener, Mou
 
     @Override
     public void mouseClicked(MouseEvent mouseEvent) {
+
     }
 
     @Override
     public void mousePressed(MouseEvent mouseEvent) {
-
+        Instant birth= now;
+        projectile.add(player.shoot(new Point(mouseEvent.getX(),mouseEvent.getY()),birth));
     }
 
     @Override
     public void mouseReleased(MouseEvent mouseEvent) {
-        Instant birth= now;
-        projectile.add(player.shoot(new Point(mouseEvent.getX(),mouseEvent.getY()),birth));
     }
 
     @Override

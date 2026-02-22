@@ -1,8 +1,10 @@
+package gamelogic;
+
 import java.awt.*;
 
 public class Enemy {
     Player player;
-    int speed = 5;
+    int speed = 3;
     int x;
     int lastx;
     int y;
@@ -58,6 +60,5 @@ public class Enemy {
         hitbox.x=x+10;
         hitbox.y=y+10;
     }
-
 
 }
